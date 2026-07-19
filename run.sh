@@ -1,0 +1,1 @@
+clojure -M -m chip8.core
