@@ -1,4 +1,5 @@
-(ns chip8.core (:require [chip8.cpu :as cpu]))
+(ns chip8.core (:require [chip8.cpu :as cpu]
+                         [chip8.render.render :as render]))
 (import '[java.nio.file Files Paths])
 
 (defn read-rom-into-memory
@@ -23,11 +24,13 @@
   (let [rom (read-rom-into-memory cpu/start-state rom-file-path)]
     (assoc cpu/start-state :memory rom))) ;returns a new state with the rom loaded
 
-(def rom "programs/test.ch8") ;name and path of the rom
+(def rom "programs/1dcell.ch8") ;name and path of the rom
 (def state (atom (load-rom rom))) ;mutable state for stepping
 
 (defn -main []
-  (println @state)
-  (dotimes [_ 19]
+  (print "\033[H\033[2J") ;clear screen first
+  (flush)
+  #_(println @state) ;@ cause it's an atom and has to be dereferenced
+  (dotimes [i 2000000]
     (cpu/tick! state)
-    (println @state))) ;@ cause it's an atom and has to be dereferenced
+    (when (= 0 (mod i 50)) (render/render-ascii-chip8 (:screen @state)))))

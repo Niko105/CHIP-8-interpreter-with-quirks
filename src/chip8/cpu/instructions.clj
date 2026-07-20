@@ -1,4 +1,6 @@
-(ns chip8.cpu.instructions)
+(ns chip8.cpu.instructions
+  (:require
+   [chip8.screen :as screen]))
 
 (defn- stack-push
   "Pushes an element into the stack, returns the new state."
@@ -35,7 +37,7 @@
 (defn CLS ;00E0
   "CLears the Screen."
   [state]
-  (assoc state :screen (repeat 2048 0))) ;blank the screen
+  (assoc state :screen screen/blank)) ;blank the screen
 
 (defn RET ;00EE
   "RETurn subroutine."
@@ -179,11 +181,29 @@
   [state Vx kk]
   (assoc-in state [:registers Vx] (bit-and (rand-int 256) kk)))
 
-;;TODO: find the will to make this function
 (defn DRW ;Dxyn
   "DRaW on the display an n-byte sprite starting at I at (Vx, Vy). VF is used as a collision flag (0 or 1)."
   [state Vx Vy n]
-  (print "Unimplemented"))
+  (reduce (fn [state h]
+            (reduce (fn [state w]
+                      (let [i (:I state)
+                            Vx-val-mod (mod (get-in state [:registers Vx]) 64)
+                            Vy-val-mod (mod (get-in state [:registers Vy]) 32)
+                            x-pre (+ Vx-val-mod w)
+                            y-pre (+ Vy-val-mod h)
+                            x (if (get-in state [:quirks :clip-side-sprites?]) x-pre (mod x-pre 64))
+                            y (if (get-in state [:quirks :clip-top-sprites?]) y-pre (mod y-pre 32))
+                            byte (get (:memory state) (+ i h))
+                            bit (bit-and (bit-shift-right byte (- 7 w)) 0x1)
+                            [new-screen collision?] (screen/drw-xy (:screen state) x y bit)
+                            screen-state (assoc state :screen new-screen)]
+                        (if collision?
+                          (assoc-in screen-state [:registers 0xF] 1)
+                          screen-state))) ;shouldn't change VF back
+                    state
+                    (range 8)))
+          (assoc-in state [:registers 0xF] 0)
+          (range n)))
 
 ;;TODO: do these functions
 (defn KEY ;Ex9E

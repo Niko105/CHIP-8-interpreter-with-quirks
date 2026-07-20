@@ -1,6 +1,6 @@
 (ns chip8.cpu
-  (:require [chip8.cpu.screen :as screen]
-            [chip8.cpu.keyboard :as keys]
+  (:require [chip8.screen :as screen]
+            [chip8.keyboard :as keys]
             [chip8.cpu.instructions :as instr]))
 ;; [ ] 1.9: CHIP-8 Virtual Machine & Interpreter (Clojure)
 ;;    [ ] Model the entire CPU state as a single immutable map structure.
@@ -79,10 +79,10 @@
    0xF0 0x80 0xF0 0x80 0x80]);; F
 
 (def program-start 0x200) ;program start
-(def initial-registers (vec (repeatedly 16 #(rand-int 256)))) ;initial registers are random
+(def initial-registers (vec (repeatedly 16 #(rand-int 1)))) ;initial registers are random
 (def initial-memory
-  (into font-sprites (repeatedly 4016 #(rand-int 256)))) ;font sprites, then random
-(def initial-stack (vec (repeatedly 16 #(rand-int 65536)))) ;initial stack contents are random
+  (into font-sprites (repeatedly 4016 #(rand-int 1)))) ;font sprites, then random
+(def initial-stack (vec (repeatedly 16 #(rand-int 1)))) ;initial stack contents are random
 
 (def start-state
   {:PC program-start
@@ -99,7 +99,8 @@
    :quirks {:logic-clears-VF? false
             :shift-uses-Vy? false
             :JMO-uses-Vx? false
-            :clip-top-sprites? true ;not implemented (DRW in general)
+            :clip-top-sprites? true
+            :clip-side-sprites? true
             :dump-and-load-restore-I? true
             :I-overflow-is-tracked? false}})
 
@@ -125,7 +126,7 @@
       0x0 (case kk
             0xE0 (instr/CLS fetched-state)
             0xEE (instr/RET fetched-state)
-            (instr/SYS fetched-state nnn))
+            (instr/SYS fetched-state))
       0x1 (instr/JMP fetched-state nnn)
       0x2 (instr/CALL fetched-state nnn)
       0x3 (instr/EQ fetched-state Vx kk)
