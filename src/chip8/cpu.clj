@@ -1,7 +1,7 @@
 (ns chip8.cpu
-  (:require [chip8.screen :as screen]
-            [chip8.keyboard :as keys]
-            [chip8.instructions :as instr]))
+  (:require [chip8.cpu.screen :as screen]
+            [chip8.cpu.keyboard :as keys]
+            [chip8.cpu.instructions :as instr]))
 ;; [ ] 1.9: CHIP-8 Virtual Machine & Interpreter (Clojure)
 ;;    [ ] Model the entire CPU state as a single immutable map structure.
 ;;       [✔] 16-bit program counter (PC)
@@ -84,7 +84,7 @@
 (def initial-stack (vec (repeatedly 16 #(rand-int 65536)))) ;initial stack contents are random
 
 (def start-state
-  {:pc program-start
+  {:PC program-start
    :registers initial-registers
    :memory initial-memory
    :I 0
@@ -100,42 +100,57 @@
             :clip-top-sprites? true ;not implemented (DRW in general)
             :dump-and-load-restore-I? true}})
 
-;;00E0
-;;00EE
-;;0nnn
-;;1nnn
-;;2nnn
-;;3xkk
-;;4xkk
-;;5xy0
-;;6xkk
-;;7xkk
-;;8xy0
-;;8xy1
-;;8xy2
-;;8xy3
-;;8xy4
-;;8xy5
-;;8xy6
-;;8xy7
-;;8xyE
-;;9xy0
-;;Annn
-;;Bnnn
-;;Bxnn
-;;Cxkk
-;;Dxyn
-;;Ex9E
-;;ExA1
-;;Fx07
-;;Fx0A
-;;Fx15
-;;Fx18
-;;Fx1E
-;;Fx29
-;;Fx33
-;;Fx55
-;;Fx65
+;;00E0 CLS  //
+;;00EE RET  //
+;;0nnn SYS  //
+;;-------------------
+;;1nnn JMP  addr
+;;-------------------
+;;2nnn CALL addr
+;;-------------------
+;;3xkk EQ   Vx, kk
+;;-------------------
+;;4xkk NEQ  Vx, kk
+;;-------------------
+;;5xy0 EQR  Vx, Vy
+;;-------------------
+;;6xkk SET  Vx, kk
+;;-------------------
+;;7xkk ADDI Vx, kk
+;;-------------------
+;;8xy0 LXY  Vx, Vy
+;;8xy1 OR   Vx, Vy
+;;8xy2 AND  Vx, Vy
+;;8xy3 XOR  Vx, Vy
+;;8xy4 ADD  Vx, Vy
+;;8xy5 SUB  Vx, Vy
+;;8xy6 SHR  Vx, Vy
+;;8xy7 SUBN Vx, Vy
+;;8xyE SHL  Vx, Vy
+;;-------------------
+;;9xy0 NEQR Vx, Vy
+;;-------------------
+;;Annn LDI  addr
+;;-------------------
+;;Bnnn JMO  nnn, Vx
+;;Bxnn JMO  nnn, Vx
+;;-------------------
+;;Cxkk RND  Vx, kk
+;;-------------------
+;;Dxyn DRW  Vx, Vy, n
+;;-------------------
+;;Ex9E KEY  Vx
+;;ExA1 KEN  Vx
+;;-------------------
+;;Fx07 LXD  Vx
+;;Fx0A WKP  Vx
+;;Fx15 LDX  Vx
+;;Fx18 LSX  Vx
+;;Fx1E AXI  Vx
+;;Fx29 LFI  Vx
+;;Fx33 BCD  Vx
+;;Fx55 SRM  Vx
+;;Fx65 LRM  Vx
 
 (defn fetch
   "Fetches an instruction to execute from RAM at the current PC."
@@ -149,13 +164,56 @@
 (defn execute
   "Executes a given instruction and returns a new cpu state."
   [fetched-state opcode]
-  ((case opcode
-     0x00E0 (instr/CLS fetched-state)
-     0x00EE (instr/RET fetched-state))))
+  (let [primary (bit-shift-right opcode 12)
+        Vx (bit-and (bit-shift-right opcode 8) 0x0F)
+        Vy (bit-and (bit-shift-right opcode 4) 0x0F)
+        nnn (bit-and opcode 0x0FFF)
+        kk (bit-and opcode 0x00FF)
+        n (bit-and opcode 0x000F)]
+    (case primary
+      0x0 (case kk
+            0xE0 (instr/CLS fetched-state)
+            0xEE (instr/RET fetched-state)
+            (instr/SYS fetched-state nnn))
+      0x1 (instr/JMP fetched-state nnn)
+      0x2 (instr/CALL fetched-state nnn)
+      0x3 (instr/EQ fetched-state Vx kk)
+      0x4 (instr/NEQ fetched-state Vx kk)
+      0x5 (instr/EQR fetched-state Vx Vy)
+      0x6 (instr/SET fetched-state Vx kk)
+      0x7 (instr/ADDI fetched-state Vx kk)
+      0x8 (case n
+            0x0 (instr/LXY fetched-state Vx Vy)
+            0x1 (instr/OR fetched-state Vx Vy)
+            0x2 (instr/AND fetched-state Vx Vy)
+            0x3 (instr/XOR fetched-state Vx Vy)
+            0x4 (instr/ADD fetched-state Vx Vy)
+            0x5 (instr/SUB fetched-state Vx Vy)
+            0x6 (instr/SHR fetched-state Vx Vy)
+            0x7 (instr/SUBN fetched-state Vx Vy)
+            0xE (instr/SHL fetched-state Vx Vy))
+      0x9 (instr/NEQR fetched-state Vx Vy)
+      0xA (instr/LDI fetched-state nnn)
+      0xB (instr/JMO fetched-state nnn Vx) ;will pick one
+      0xC (instr/RND fetched-state Vx kk)
+      0xD (instr/DRW fetched-state Vx Vy n) ;actually x and y
+      0xE (case kk
+            0x9E (instr/KEY fetched-state Vx)
+            0xA1 (instr/KEN fetched-state Vx))
+      0xF (case kk
+            0x07 (instr/LXD fetched-state Vx)
+            0x0A (instr/WKP fetched-state Vx)
+            0x15 (instr/LDX fetched-state Vx)
+            0x18 (instr/LSX fetched-state Vx)
+            0x1E (instr/AXI fetched-state Vx)
+            0x29 (instr/LFI fetched-state Vx)
+            0x33 (instr/BCD fetched-state Vx)
+            0x55 (instr/SRM fetched-state Vx)
+            0x65 (instr/LRM fetched-state Vx)))))
 
 (defn tick! ;swap! is the only way to mutate things, and atoms are the only mutable bit, ! marks a function as mutating
   "Ticks the VM once."
   [state]
   (swap! state (fn [current-state] ;first argument is the atom, by value, always, that's swap!
-                 (let [[stepped-state opcode] (fetch current-state)] ;you can do multiple-value-bind for free in clj
-                   (execute stepped-state opcode))))) ;step once
+                 (let [[fetched-state opcode] (fetch current-state)] ;you can do multiple-value-bind for free in clj]
+                   (execute fetched-state opcode))))) ;step once

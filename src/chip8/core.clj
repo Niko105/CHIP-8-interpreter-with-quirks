@@ -23,8 +23,11 @@
   (let [rom (read-rom-into-memory cpu/start-state rom-file-path)]
     (assoc cpu/start-state :memory rom))) ;returns a new state with the rom loaded
 
-(def rom "programs/1dcell.ch8") ;name and path of the rom
-(def state (atom (load-rom rom))) ;mutable state for stepping (to redo, cpu has changed significantly)
+(def rom "programs/test.ch8") ;name and path of the rom
+(def state (atom (load-rom rom))) ;mutable state for stepping
 
 (defn -main []
-  (print @state)) ;@ cause it's an atom and has to be dereferenced
+  (println @state)
+  (dotimes [_ 19]
+    (cpu/tick! state)
+    (println @state))) ;@ cause it's an atom and has to be dereferenced

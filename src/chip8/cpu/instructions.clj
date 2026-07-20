@@ -1,6 +1,6 @@
-(ns chip8.instructions)
+(ns chip8.cpu.instructions)
 
-(defn stack-push
+(defn- stack-push
   "Pushes an element into the stack, returns the new state."
   [state element]
   (if (< (:SP state) 16)
@@ -9,7 +9,7 @@
            :SP (inc (:SP state)))
     (throw (ex-info "Stack out of bounds" (select-keys state [:SP :stack])))))
 
-(defn stack-pop
+(defn- stack-pop
   "Pops an element off the stack, returns the new element and new state."
   [state]
   (if (> (:SP state) 0)
@@ -37,7 +37,7 @@
   [state]
   (assoc state :screen (repeat 2048 0))) ;blank the screen
 
-(defn RET;00EE
+(defn RET ;00EE
   "RETurn subroutine."
   [state]
   (let [[addr stack-state] (stack-pop state)] ;pop address from stack
@@ -119,7 +119,7 @@
 (defn ADD ;8xy4
   "ADDs two registers and stores the result in Vx. Sets VF to 1 if carry, else 0."
   [state Vx Vy]
-  (let [added-state (op-registers state Vx Vy +)
+  (let [added-state (op-registers state Vx Vy +) ;perform the sum
         sum (get (:registers added-state) Vx) ;get the sum's value
         carry? (> sum 0xFF) ;does it carry?
         safe-sum (bind-8 sum)] ;bound sum
@@ -144,7 +144,7 @@
   (let [source (if (get-in state [:quirks :shift-uses-Vy?]) Vy Vx)
         value (get-in state [:registers source])]
     (-> state
-        (assoc-in [:registers 0xF] (if (bit-test value 1) 1 0))
+        (assoc-in [:registers 0xF] (if (bit-test value 0) 1 0))
         (assoc-in [:registers Vx] (bind-8 (bit-shift-right value 1))))))
 
 (defn SUBN ;8xy7
@@ -256,7 +256,7 @@
         reduced-state (reduce (fn [s r] ;apply a function to a list, cause there's NO MUTATING LOOPS, reduce is still sequential tho
                                 (assoc-in s [:memory (+ i r)] (get-in s [:registers r]))) ;so i guess there are
                               state regs)] ;they're just pretty well hidden in the compilation
-    (if (get-in state [:quirks :dump-and-load-restore-I?]) (assoc-in reduced-state [:registers :I] i) reduced-state)))
+    (if (get-in state [:quirks :dump-and-load-restore-I?]) (assoc reduced-state :I i) reduced-state)))
 
 (defn LRM ;Fx65
   "Loads Registers V0--Vx from Memory starting from I."
@@ -266,4 +266,4 @@
         reduced-state (reduce (fn [s r]
                                 (assoc-in s [:registers r] (get-in s [:memory (+ i r)])))
                               state regs)]
-    (if (get-in state [:quirks :dump-and-load-restore-I?]) (assoc-in reduced-state [:registers :I] i) reduced-state)))
+    (if (get-in state [:quirks :dump-and-load-restore-I?]) (assoc reduced-state :I i) reduced-state)))
