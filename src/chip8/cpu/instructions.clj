@@ -57,21 +57,21 @@
   "Skips one instruction if Vx is EQual to kk."
   [state Vx kk]
   (if (= (get (:registers state) Vx) kk)
-    (assoc state :PC (+ (:PC state) 2))
+    (update state :PC #(+ % 2))
     state))
 
 (defn NEQ ;4xkk
   "Skips one instruction if Vx is Not EQual to kk."
   [state Vx kk]
   (if (not= (get (:registers state) Vx) kk)
-    (assoc state :PC (+ (:PC state) 2))
+    (update state :PC #(+ % 2))
     state))
 
 (defn EQR ;5xy0
   "Skips one instruction if Vx is EQual to another Register."
   [state Vx Vy]
-  (if (= (get (:registers state) Vx) (get (:registers state) Vy))
-    (assoc state :PC (+ (:PC state) 2))
+  (if (= (get-in state [:registers Vx]) (get-in state [:registers Vy]))
+    (update state :PC #(+ % 2))
     state))
 
 (defn SET ;6xkk
@@ -82,17 +82,18 @@
 (defn ADDI ;7xkk
   "ADDs Immediate to Vx."
   [state Vx kk]
-  (assoc-in state [:registers Vx] (bind-8 (+ (get (:registers state) Vx) kk)))) ;using AND so it's bounded 0..255 and wraps
+  (update-in state [:registers Vx] #(bind-8 (+ % kk)))) ;using AND so it's bounded 0..255 and wraps
 
 (defn LXY ;8xy0
   "Load VX with VY."
   [state Vx Vy]
-  (assoc-in state [:registers Vx] (get (:registers state) Vy)))
+  (assoc-in state [:registers Vx] (get-in state [:registers Vy])))
 
 (defn- op-registers
-  "Function to build an operaton between registers and storing in Vx."
+  "Function to build an operation between registers and storing in Vx."
   [state Vx Vy op]
-  (assoc-in state [:registers Vx] (op (get (:registers state) Vx) (get (:registers state) Vy))))
+  (let [Vy-reg (get-in state [:registers Vy])]
+    (update-in state [:registers Vx] #(bind-8 (op % Vy-reg)))))
 
 (defn- clear-VF-maybe-if-the-flag-is-set
   "Looks at the :logic-clears-VF? flag and clears VF if it's true."
@@ -119,24 +120,16 @@
 (defn ADD ;8xy4
   "ADDs two registers and stores the result in Vx. Sets VF to 1 if carry, else 0."
   [state Vx Vy]
-  (let [added-state (op-registers state Vx Vy +) ;perform the sum
-        sum (get (:registers added-state) Vx) ;get the sum's value
-        carry? (> sum 0xFF) ;does it carry?
-        safe-sum (bind-8 sum)] ;bound sum
-    (-> added-state ;threading added-state through two assocs
-        (assoc-in [:registers Vx] safe-sum) ;first set the sum so it's bounded
-        (assoc-in [:registers 0xF] (if carry? 1 0))))) ;then update VF (index 0xF)
+  (let [added-state (op-registers state Vx Vy +) ;perform the sum (bounded)
+        carry? (> (+ (get-in state [:registers Vx]) (get-in state [:registers Vy])) 0xFF)] ;does it carry?
+    (assoc-in added-state [:registers 0xF] (if carry? 1 0)))) ;then update VF (index 0xF)
 
 (defn SUB ;8xy5
   "SUBtracts two registers and stores the result in Vx. Sets VF to 0 if borrow, else 1."
   [state Vx Vy]
-  (let [added-state (op-registers state Vx Vy -)
-        sub (get (:registers added-state) Vx)
-        borrorw? (< sub 0)
-        safe-sub (bind-8 sub)]
-    (-> added-state
-        (assoc-in [:registers Vx] safe-sub)
-        (assoc-in [:registers 0xF] (if borrorw? 0 1)))))
+  (let [subbed-state (op-registers state Vx Vy -)
+        borrow? (< (get-in state [:registers Vx]) (get-in state [:registers Vy]))]
+    (assoc-in subbed-state [:registers 0xF] (if borrow? 0 1))))
 
 (defn SHR ;8xy6
   "SHifts one register Right by one depending on the emulator configuration. Sets VF to the LSB of Vx."
@@ -150,13 +143,9 @@
 (defn SUBN ;8xy7
   "SUBtracts two registers and stores the result in Vx. Sets VF to 0 if borrow, else 1. This opcode performs Vy-Vx."
   [state Vx Vy]
-  (let [added-state (op-registers state Vx Vy #(- %2 %1)) ;swap the operands
-        sub (get (:registers added-state) Vx)
-        borrorw? (< sub 0)
-        safe-sub (bind-8 sub)]
-    (-> added-state
-        (assoc-in [:registers Vx] safe-sub)
-        (assoc-in [:registers 0xF] (if borrorw? 0 1)))))
+  (let [subbed-state (op-registers state Vx Vy #(- %2 %1)) ;swap the operands
+        borrow? (< (get-in state [:registers Vy]) (get-in state [:registers Vx]))]
+    (assoc-in subbed-state [:registers 0xF] (if borrow? 0 1))))
 
 (defn SHL ;8xyE
   "SHifts one register Left by one depending on the emulator configuration. Sets VF to the MSB of Vx."
@@ -171,7 +160,7 @@
   "Skips one instruction if Vx is EQual to another Register."
   [state Vx Vy]
   (if (not= (get (:registers state) Vx) (get (:registers state) Vy))
-    (assoc state :PC (+ (:PC state) 2))
+    (update state :PC #(+ % 2))
     state))
 
 (defn LDI ;Annn
@@ -216,7 +205,7 @@
 (defn WKP ;Fx0A
   "Waits for a Key with value Vx to be Pressed and released. (blocking)"
   [state Vx]
-  ())
+  (print "Unimplemented"))
 
 (defn LDX ;Fx15
   "Loads the Delay timer with VX."
@@ -231,7 +220,12 @@
 (defn AXI ;Fx1E
   "Adds VX to I, stores in I."
   [state Vx]
-  (assoc state :I (bind-16 (+ (:I state) (get (:registers state) Vx)))))
+  (let [Vx-val (get-in state [:registers Vx])
+        updated-state (update state :I #(bind-16 (+ % Vx-val)))
+        overflow? (> (+ (:I state) Vx-val) 0x0FFF)]
+    (if (get-in updated-state [:quirks :I-overflow-is-tracked?])
+      (assoc-in updated-state [:registers 0xF] (if overflow? 1 0))
+      updated-state)))
 
 (defn LFI ;Fx29
   "Loads the Font sprite for the Vx character in I."

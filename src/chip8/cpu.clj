@@ -100,7 +100,8 @@
             :shift-uses-Vy? false
             :JMO-uses-Vx? false
             :clip-top-sprites? true ;not implemented (DRW in general)
-            :dump-and-load-restore-I? true}})
+            :dump-and-load-restore-I? true
+            :I-overflow-is-tracked? false}})
 
 (defn fetch
   "Fetches an instruction to execute from RAM at the current PC."
@@ -160,6 +161,13 @@
             0x33 (instr/BCD fetched-state Vx)
             0x55 (instr/SRM fetched-state Vx)
             0x65 (instr/LRM fetched-state Vx)))))
+
+(defn tick-timers
+  "Helper functions to tick the timers down by one, should run once every 60Hz. Returns a new cpu state."
+  [state]
+  (-> state
+      (update :delay #(if (pos? %) (dec %) %)) ;updates delay by applying a function to it, better than assoc since it's a direct function
+      (update :sound #(if (pos? %) (dec %) %)))) ;%/%1 is first argument, %2 is second, %3 is third, %& is rest
 
 (defn tick! ;swap! is the only way to mutate things, and atoms are the only mutable bit, ! marks a function as mutating
   "Ticks the VM once."
