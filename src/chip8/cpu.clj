@@ -54,6 +54,7 @@
 ;;       [✔] Fx33 store BCD of Vx in I, I+1, and I+2
 ;;       [✔] Fx55 store registers from V0 to Vx in memory starting from I
 ;;       [✔] Fx65 read registers from V0 to Vx from memory starting from I
+;;       [ ] Extra opcodes for SCHIP compatibility (7)
 ;;    [ ] Render the 64x32 monochrome display matrix (separate buffer) using a functional loop.
 ;;       [ ] jesus christ
 ;;       [ ] wrap horiz clip vert
@@ -93,64 +94,13 @@
    :delay 0
    :sound 0
    :screen screen/start-screen
+   :high-res false ;for SCHIP
    :keys keys/start-keys
    :quirks {:logic-clears-VF? false
             :shift-uses-Vy? false
             :JMO-uses-Vx? false
             :clip-top-sprites? true ;not implemented (DRW in general)
             :dump-and-load-restore-I? true}})
-
-;;00E0 CLS  //
-;;00EE RET  //
-;;0nnn SYS  //
-;;-------------------
-;;1nnn JMP  addr
-;;-------------------
-;;2nnn CALL addr
-;;-------------------
-;;3xkk EQ   Vx, kk
-;;-------------------
-;;4xkk NEQ  Vx, kk
-;;-------------------
-;;5xy0 EQR  Vx, Vy
-;;-------------------
-;;6xkk SET  Vx, kk
-;;-------------------
-;;7xkk ADDI Vx, kk
-;;-------------------
-;;8xy0 LXY  Vx, Vy
-;;8xy1 OR   Vx, Vy
-;;8xy2 AND  Vx, Vy
-;;8xy3 XOR  Vx, Vy
-;;8xy4 ADD  Vx, Vy
-;;8xy5 SUB  Vx, Vy
-;;8xy6 SHR  Vx, Vy
-;;8xy7 SUBN Vx, Vy
-;;8xyE SHL  Vx, Vy
-;;-------------------
-;;9xy0 NEQR Vx, Vy
-;;-------------------
-;;Annn LDI  addr
-;;-------------------
-;;Bnnn JMO  nnn, Vx
-;;Bxnn JMO  nnn, Vx
-;;-------------------
-;;Cxkk RND  Vx, kk
-;;-------------------
-;;Dxyn DRW  Vx, Vy, n
-;;-------------------
-;;Ex9E KEY  Vx
-;;ExA1 KEN  Vx
-;;-------------------
-;;Fx07 LXD  Vx
-;;Fx0A WKP  Vx
-;;Fx15 LDX  Vx
-;;Fx18 LSX  Vx
-;;Fx1E AXI  Vx
-;;Fx29 LFI  Vx
-;;Fx33 BCD  Vx
-;;Fx55 SRM  Vx
-;;Fx65 LRM  Vx
 
 (defn fetch
   "Fetches an instruction to execute from RAM at the current PC."
