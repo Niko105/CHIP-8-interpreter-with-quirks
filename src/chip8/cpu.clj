@@ -165,12 +165,15 @@
             0x55 (instr/SRM fetched-state Vx)
             0x65 (instr/LRM fetched-state Vx)))))
 
-(defn tick-timers
+(defn beep? "Simple predicate to see if the beeper should beep." [state] (pos? (:sound @state)))
+
+(defn tick-timers!
   "Helper functions to tick the timers down by one, should run once every 60Hz. Returns a new cpu state."
   [state]
-  (-> state
-      (update :delay #(if (pos? %) (dec %) %)) ;updates delay by applying a function to it, better than assoc since it's a direct function
-      (update :sound #(if (pos? %) (dec %) %)))) ;%/%1 is first argument, %2 is second, %3 is third, %& is rest
+  (swap! state (fn [current-state]
+                 (-> current-state
+                     (update :delay #(if (pos? %) (dec %) %)) ;updates delay by applying a function to it, better than assoc since it's a direct function
+                     (update :sound #(if (pos? %) (dec %) %)))))) ;%/%1 is first argument, %2 is second, %3 is third, %& is rest
 
 (defn tick! ;swap! is the only way to mutate things, and atoms are the only mutable bit, ! marks a function as mutating
   "Ticks the VM once."

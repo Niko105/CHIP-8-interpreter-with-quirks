@@ -39,10 +39,12 @@
 (defn -main []
   (print "\033[H\033[2J") ;clear screen first
   (flush)
-  (println @state) ;@ cause it's an atom and has to be dereferenced
+  #_(println @state) ;@ cause it's an atom and has to be dereferenced
   (dotimes [i runtime]
     (cpu/tick! state)
     #_(println @state)
-    (when (zero? (mod i ticks-per-frame))
-      (render/render-ascii-chip8 (:screen @state))) ;runs at ~(/ main-frequency fps), 60Hz by default
+    (when (zero? (mod i ticks-per-frame)) ;runs at ~(/ main-frequency fps), 60Hz by default
+      (render/render-ascii-chip8 (:screen @state))
+      (cpu/tick-timers! state))
+    #_(when cpu/beep? (println "BEEP!"))
     (Thread/sleep time-per-tick)))
