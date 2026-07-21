@@ -1,6 +1,6 @@
 (ns chip8.core
   (:require [chip8.cpu :as cpu]
-            [chip8.render.render :as render])
+            [chip8.render.cli :as render])
   (:import [java.nio.file Files Paths]))
 
 (def main-frequency 1000) ;main clock frequency (CHIP8 1000Hz, SCHIP ~5000Hz)

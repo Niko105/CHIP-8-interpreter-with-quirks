@@ -1,4 +1,4 @@
-(ns chip8.render.render (:require [chip8.screen :as screen]))
+(ns chip8.render.cli (:require [chip8.screen :as screen]))
 
 (defn render-ascii-chip8
   "Renders the chip8 screen (64x32) in ascii characters, does not support high resolution (SCHIP)."

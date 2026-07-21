@@ -11,7 +11,7 @@
 ;;       [✔] 16-bit 16-byte stack with 8-bit stack pointer (SP) for functions
 ;;       [✔] 8-bit delay timer
 ;;       [✔] 8-bit sound timer
-;;          [ ] decrease at 1 tick per 60Hz, when above 0 sound plays a beep
+;;          [✔] decrease at 1 tick per 60Hz, when above 0 sound plays a beep
 ;;       [✔] 64x32 bit frame buffer
 ;;       [✔] 4096 bytes of addressable memory, program starts at 0x200, 0x000 to 0x1FF has the interpreter, 0x000 to 0x080 for fonts
 ;;       [ ] input (halt until key release)
@@ -42,7 +42,7 @@
 ;;       [✔] Bnnn JMP nnn + V0
 ;;       [✔] Bxnn JMP nn + Vx (legacy)
 ;;       [✔] Cxkk Vx = random AND kk
-;;       [-] Dxyn display n-byte sprite starting at I at (Vx, Vy), VF = collision (0 or 1)
+;;       [✔] Dxyn display n-byte sprite starting at I at (Vx, Vy), VF = collision (0 or 1)
 ;;       [-] Ex9E skip next instruction if key == Vx is pressed
 ;;       [-] ExA1 skip next instruction if key != Vx is pressed
 ;;       [✔] Fx07 Vx = delay timer value
@@ -55,10 +55,10 @@
 ;;       [✔] Fx55 store registers from V0 to Vx in memory starting from I
 ;;       [✔] Fx65 read registers from V0 to Vx from memory starting from I
 ;;       [ ] Extra opcodes for SCHIP compatibility (7)
-;;    [ ] Render the 64x32 monochrome display matrix (separate buffer) using a functional loop.
-;;       [ ] jesus christ
-;;       [ ] wrap horiz clip vert
-;;       [ ] 60Hz per frame btw
+;;    [✔] Render the 64x32 monochrome display matrix (separate buffer) using a functional loop.
+;;       [✔] jesus christ
+;;       [✔] wrap horiz clip vert
+;;       [✔] 60Hz per frame btw
 
 (def font-sprites
   [0xF0 0x90 0x90 0x90 0xF0 ;; 0
