@@ -79,9 +79,11 @@
    0xF0 0x80 0xF0 0x80 0x80]);; F
 
 (def program-start 0x200) ;program start
+(def memory-size 4096)
+(def font-size (count font-sprites))
 (def initial-registers (vec (repeat 16 0))) ;16 8-bit registers
 (def initial-memory
-  (into font-sprites (repeatedly 4016 #(rand-int 255)))) ;font sprites, then random data (uninitialised), 4096 bytes of noise
+  (into font-sprites (repeatedly (- memory-size font-size) #(rand-int 255)))) ;font sprites, then random data (uninitialised), 4096 bytes of noise
 (def initial-stack (vec (repeat 16 0))) ;16 16-bit registers
 
 (def start-state
