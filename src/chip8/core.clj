@@ -31,6 +31,6 @@
   (print "\033[H\033[2J") ;clear screen first
   (flush)
   #_(println @state) ;@ cause it's an atom and has to be dereferenced
-  (dotimes [i 2000000]
+  (dotimes [i 108660000]
     (cpu/tick! state)
-    (when (= 0 (mod i 50)) (render/render-ascii-chip8 (:screen @state)))))
+    (when (= 0 (mod i 50)) (render/render-ascii-chip8 (:screen @state)) (Thread/sleep 16)))) ;60Hz
