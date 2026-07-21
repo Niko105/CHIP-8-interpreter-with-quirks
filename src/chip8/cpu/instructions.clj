@@ -209,12 +209,14 @@
 (defn KEY ;Ex9E
   "Skip next instruction if the KEY with value Vx is pressed. (non blocking)"
   [state Vx]
-  (print "Unimplemented"))
+  (print "Unimplemented")
+  state)
 
 (defn KEN ;ExA1
   "Skip next instruction if the KE with value Vx is Not pressed. (non blocking)"
   [state Vx]
-  (print "Unimplemented"))
+  (print "Unimplemented")
+  state)
 
 (defn LXD ;Fx07
   "Loads VX with the Delay timer's value."
@@ -225,7 +227,8 @@
 (defn WKP ;Fx0A
   "Waits for a Key with value Vx to be Pressed and released. (blocking)"
   [state Vx]
-  (print "Unimplemented"))
+  (print "Unimplemented")
+  state)
 
 (defn LDX ;Fx15
   "Loads the Delay timer with VX."
@@ -242,7 +245,7 @@
   [state Vx]
   (let [Vx-val (get-in state [:registers Vx])
         updated-state (update state :I #(bind-16 (+ % Vx-val)))
-        overflow? (> (+ (:I state) Vx-val) 0x0FFF)]
+        overflow? (> (+ (:I state) Vx-val) 0xFFF)]
     (if (get-in updated-state [:quirks :I-overflow-is-tracked?])
       (assoc-in updated-state [:registers 0xF] (if overflow? 1 0))
       updated-state)))

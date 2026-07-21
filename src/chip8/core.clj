@@ -23,13 +23,14 @@
   (let [rom (read-rom-into-memory (:memory cpu/start-state) rom-file-path)]
     (assoc cpu/start-state :memory rom))) ;returns a new state with the rom loaded
 
-(def rom "programs/1dcell.ch8") ;name and path of the rom
+(def rom "programs/knumberknower.ch8") ;name and path of the rom
 (def state (atom (load-rom rom))) ;mutable state for stepping
 
 (defn -main []
   (print "\033[H\033[2J") ;clear screen first
   (flush)
-  #_(println @state) ;@ cause it's an atom and has to be dereferenced
+  (println @state) ;@ cause it's an atom and has to be dereferenced
   (dotimes [i 108660000]
     (cpu/tick! state)
+    #_(println @state)
     (when (= 0 (mod i 500)) (render/render-ascii-chip8 (:screen @state)) (Thread/sleep 16)))) ;60Hz

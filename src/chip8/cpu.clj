@@ -79,10 +79,10 @@
    0xF0 0x80 0xF0 0x80 0x80]);; F
 
 (def program-start 0x200) ;program start
-(def initial-registers (vec (repeatedly 16 #(rand-int 256)))) ;initial registers are random
+(def initial-registers (vec (repeat 16 0))) ;16 8-bit registers
 (def initial-memory
-  (into font-sprites (repeatedly 4016 #(rand-int 256)))) ;font sprites, then random
-(def initial-stack (vec (repeatedly 16 #(rand-int 65536)))) ;initial stack contents are random
+  (into font-sprites (repeatedly 4016 #(rand-int 255)))) ;font sprites, then random data (uninitialised), 4096 bytes of noise
+(def initial-stack (vec (repeat 16 0))) ;16 16-bit registers
 
 (def start-state
   {:PC program-start

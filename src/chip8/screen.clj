@@ -1,8 +1,8 @@
 (ns chip8.screen)
 
-(def start-screen (vec (repeatedly 2048 #(= 1 (rand-int 2))))) ;random array of bools. 64x32
+(def start-screen (vec (repeat 2048 false))) ;64x32
 
-(def blank (vec (repeat 2048 false))) ;blank screen for CLS
+(def blank start-screen) ;blank screen for CLS, alias for start-screen
 
 (defn drw-xy
   "Toggles a pixel at (x,y) if the input is 1, returns the new screen and if a pixel was erased."
