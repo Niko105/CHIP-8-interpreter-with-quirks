@@ -3,7 +3,7 @@
             [chip8.keyboard :as keys]
             [chip8.cpu.instructions :as instr]))
 ;; [ ] 1.9: CHIP-8 Virtual Machine & Interpreter (Clojure)
-;;    [ ] Model the entire CPU state as a single immutable map structure.
+;;    [✔] Model the entire CPU state as a single immutable map structure.
 ;;       [✔] 16-bit program counter (PC)
 ;;       [✔] sixteen 8-bit registers (V0-VF)
 ;;       [✔] VF register flags
@@ -14,7 +14,7 @@
 ;;          [✔] decrease at 1 tick per 60Hz, when above 0 sound plays a beep
 ;;       [✔] 64x32 bit frame buffer
 ;;       [✔] 4096 bytes of addressable memory, program starts at 0x200, 0x000 to 0x1FF has the interpreter, 0x000 to 0x080 for fonts
-;;       [ ] input (halt until key release)
+;;       [✔] input (halt until key release)
 ;;    [ ] Implement a pure Fetch-Decode-Execute pipeline for all 35 opcodes. every instruction is on an even PC index.
 ;;       [✔] shift shifts Vy and copies to Vx / Vx is shfited in-place switch
 ;;       [✔] I++ after read or write of registes / I is unmodified switch
@@ -184,8 +184,8 @@
                  (let [[fetched-state opcode] (fetch current-state)] ;you can do multiple-value-bind for free in clj]
                    (execute fetched-state opcode))))) ;step once
 
-(defn update-keyboard-cli!
-  "Updates the keyboard map of the cpu from cli. Takes in an atom. Returns a new cpu atom."
+(defn update-keyboard!
+  "Updates the keyboard map of the cpu from cli/swing. Takes in an atom. Returns a new cpu atom."
   [state]
   (swap! state (fn [current-state]
-                 (keys/key-cli current-state))))
+                 (keys/update-keyboard current-state))))

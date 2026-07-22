@@ -22,3 +22,5 @@
   (when (or (> x 63) (> y 31) (neg? x) (neg? y)) (throw (ex-info "X or Y values out of bounds, clip/wrap before asking to 0..63 and 0..31." {:x x :y y})))
   (let [index (+ (* y 64) x)]
     (get screen index)))
+
+;;;TODO: normalise this system so (render screen) is in here instead of calling the specific ones

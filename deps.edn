@@ -1,0 +1,4 @@
+{:paths ["src"]
+ :deps {org.jline/jline {:mvn/version "3.26.3"}}
+ :aliases
+ {:main {:jvm-opts ["--enable-native-access=ALL-UNNAMED"]}}}

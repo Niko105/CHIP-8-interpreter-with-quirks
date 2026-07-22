@@ -42,7 +42,7 @@
   #_(println @state) ;@ cause it's an atom and has to be dereferenced
   (dotimes [i runtime]
     (cpu/tick! state)
-    (cpu/update-keyboard-cli! state)
+    (cpu/update-keyboard! state)
     #_(println @state)
     (when (zero? (mod i ticks-per-frame)) ;runs at ~(/ main-frequency fps), 60Hz by default
       (render/render-ascii-chip8 (:screen @state))
