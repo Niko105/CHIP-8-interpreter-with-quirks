@@ -2,7 +2,8 @@
   (:require [chip8.screen :as screen]
             [chip8.keyboard :as keys]
             [chip8.cpu.instructions :as instr]))
-;; [ ] 1.9: CHIP-8 Virtual Machine & Interpreter (Clojure)
+
+;; [✔] 1.9: CHIP-8 Virtual Machine & Interpreter (Clojure)
 ;;    [✔] Model the entire CPU state as a single immutable map structure.
 ;;       [✔] 16-bit program counter (PC)
 ;;       [✔] sixteen 8-bit registers (V0-VF)
@@ -15,7 +16,7 @@
 ;;       [✔] 64x32 bit frame buffer
 ;;       [✔] 4096 bytes of addressable memory, program starts at 0x200, 0x000 to 0x1FF has the interpreter, 0x000 to 0x080 for fonts
 ;;       [✔] input (halt until key release)
-;;    [ ] Implement a pure Fetch-Decode-Execute pipeline for all 35 opcodes. every instruction is on an even PC index.
+;;    [✔] Implement a pure Fetch-Decode-Execute pipeline for all 35 opcodes. every instruction is on an even PC index.
 ;;       [✔] shift shifts Vy and copies to Vx / Vx is shfited in-place switch
 ;;       [✔] I++ after read or write of registes / I is unmodified switch
 ;;       [✔] 0nnn ignored
@@ -54,7 +55,6 @@
 ;;       [✔] Fx33 store BCD of Vx in I, I+1, and I+2
 ;;       [✔] Fx55 store registers from V0 to Vx in memory starting from I
 ;;       [✔] Fx65 read registers from V0 to Vx from memory starting from I
-;;       [ ] Extra opcodes for SCHIP compatibility (7)
 ;;    [✔] Render the 64x32 monochrome display matrix (separate buffer) using a functional loop.
 ;;       [✔] jesus christ
 ;;       [✔] wrap horiz clip vert
