@@ -205,30 +205,54 @@
           (assoc-in state [:registers 0xF] 0)
           (range n)))
 
-;;TODO: do these functions
 (defn KEY ;Ex9E
   "Skip next instruction if the KEY with value Vx is pressed. (non blocking)"
   [state Vx]
-  (print "Unimplemented")
-  state)
+  (let [Vx-val (get-in state [:registers Vx])
+        key (get-in state [:keys Vx-val])]
+    (if key
+      (update state :PC #(+ % 2))
+      state)))
 
 (defn KEN ;ExA1
   "Skip next instruction if the KE with value Vx is Not pressed. (non blocking)"
   [state Vx]
-  (print "Unimplemented")
-  state)
+  (let [Vx-val (get-in state [:registers Vx])
+        key (get-in state [:keys Vx-val])]
+    (if key
+      state
+      (update state :PC #(+ % 2)))))
 
 (defn LXD ;Fx07
   "Loads VX with the Delay timer's value."
   [state Vx]
   (assoc-in state [:registers Vx] (:delay state)))
 
-;;TODO: do this
+;;;TODO: there has got to be a better way to implement this, good luck tho, this works
+;; when Fx0A is called, i save the state map in :Fx0A-key and halt the cpu
+;; once one of them turns on, i store THAT in :Fx0A-key
+;; once the :keys state for the :Fx0A-key key turns false, i store the value in Vx
+;; after that i also clear :Fx0A-key, jump 2 forwards and resume execution
+;; that's done mostly with ifs checking if the :Fx0A-key is a vector or not
 (defn WKP ;Fx0A
-  "Waits for a Key with value Vx to be Pressed and released. (blocking)"
+  "Waits for a Key to be Pressed and released, then stores it in Vx. (blocking)"
   [state Vx]
-  (print "Unimplemented")
-  state)
+  (let [Fx0A-key (:Fx0A-key state)
+        key-map (:keys state)
+        checked-key (if (integer? Fx0A-key) (get-in state [:keys Fx0A-key]) nil)] ;we only know once a key is selected
+    #_(println (type Fx0A-key))
+    (cond
+      (nil? Fx0A-key) (assoc state :Fx0A-key key-map :PC (- (:PC state) 2)) ;if it's empty, block execution and wait for a change (move PC back so the lock works)
+      (vector? Fx0A-key) (let [res (some #(when (and (nth key-map %) (not (nth Fx0A-key %))) %) (range 16))] ;if it's a vector, wait for one of the keys to turn true and save it, if none change, update Fx0A-key
+                           (if res (assoc state :Fx0A-key res) (assoc state :Fx0A-key key-map)))
+      (and (integer? Fx0A-key) (not checked-key)) (-> state ;if it's a number and its key is false, run the actual opcode (finally), and get out of this horrible instruction
+                                                      (assoc-in [:registers Vx] Fx0A-key)
+                                                      (assoc :Fx0A-key nil)
+                                                      (update :PC #(+ % 2)))
+      :else state))) ;else (shouldn't be possible) just continue as if nothing happened
+
+;;;while working on the opcode above, i just thought of a simpler sistem, :Fx0A-key becomes :blocked and i just use a similar
+;;;system as this one but implemented entirely in the chip8.keyboard namespace, just key-up and key-down functions
 
 (defn LDX ;Fx15
   "Loads the Delay timer with VX."

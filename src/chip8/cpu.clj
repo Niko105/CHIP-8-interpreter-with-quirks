@@ -43,10 +43,10 @@
 ;;       [✔] Bxnn JMP nn + Vx (legacy)
 ;;       [✔] Cxkk Vx = random AND kk
 ;;       [✔] Dxyn display n-byte sprite starting at I at (Vx, Vy), VF = collision (0 or 1)
-;;       [-] Ex9E skip next instruction if key == Vx is pressed
-;;       [-] ExA1 skip next instruction if key != Vx is pressed
+;;       [✔] Ex9E skip next instruction if key == Vx is pressed
+;;       [✔] ExA1 skip next instruction if key != Vx is pressed
 ;;       [✔] Fx07 Vx = delay timer value
-;;       [-] Fx0A Vx = value of key pressed (halt until key pressed and released)
+;;       [✔] Fx0A Vx = value of key pressed (halt until key pressed and released)
 ;;       [✔] Fx15 delay timer value = Vx
 ;;       [✔] Fx18 sound timer value = Vx
 ;;       [✔] Fx1E I = I + Vx
@@ -98,6 +98,7 @@
    :screen screen/start-screen
    :high-res false ;for SCHIP
    :keys keys/start-keys
+   :Fx0A-key nil ;for Fx0A "on key released" behaviour, implementation is kind of quirky
    :quirks {:logic-clears-VF? false
             :shift-uses-Vy? false
             :JMO-uses-Vx? false
@@ -112,7 +113,8 @@
   (let [memory (:memory current-state)
         pc (:PC current-state)
         opcode (bit-or (bit-shift-left (get memory pc) 8) (get memory (inc pc))) ;combine 2 8-bit into 1 16-bit
-        fetched-state (assoc current-state :PC (+ pc 2))] ;increase pc by two
+        pc-waiting (if (:Fx0A-key current-state) pc (+ pc 2)) ;if we're waiting on a key (not nil), stop advancing
+        fetched-state (assoc current-state :PC pc-waiting)] ;increase pc by two unless we're waiting on I/O
     [fetched-state opcode]))
 
 (defn execute
@@ -165,10 +167,10 @@
             0x55 (instr/SRM fetched-state Vx)
             0x65 (instr/LRM fetched-state Vx)))))
 
-(defn beep? "Simple predicate to see if the beeper should beep." [state] (pos? (:sound @state)))
+(defn beep? "Simple predicate to see if the beeper should beep. Takes in an atom." [state] (pos? (:sound @state)))
 
 (defn tick-timers!
-  "Helper functions to tick the timers down by one, should run once every 60Hz. Returns a new cpu state."
+  "Helper functions to tick the timers down by one, should run once every 60Hz. Takes in an atom. Returns a new cpu atom."
   [state]
   (swap! state (fn [current-state]
                  (-> current-state
@@ -176,8 +178,14 @@
                      (update :sound #(if (pos? %) (dec %) %)))))) ;%/%1 is first argument, %2 is second, %3 is third, %& is rest
 
 (defn tick! ;swap! is the only way to mutate things, and atoms are the only mutable bit, ! marks a function as mutating
-  "Ticks the VM once."
+  "Ticks the VM once. Takes in an atom. Returns a new cpu atom."
   [state]
   (swap! state (fn [current-state] ;first argument is the atom, by value, always, that's swap!
                  (let [[fetched-state opcode] (fetch current-state)] ;you can do multiple-value-bind for free in clj]
                    (execute fetched-state opcode))))) ;step once
+
+(defn update-keyboard-cli!
+  "Updates the keyboard map of the cpu from cli. Takes in an atom. Returns a new cpu atom."
+  [state]
+  (swap! state (fn [current-state]
+                 (keys/key-cli current-state))))

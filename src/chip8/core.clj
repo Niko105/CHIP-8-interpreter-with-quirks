@@ -9,7 +9,7 @@
 (def runtime (* main-frequency seconds-to-run)) ;how many ticks to run the sim for (108660000 gives rule 090 on 1dcell.ch8)
 (def fps 60) ;the fps the render thread runs at
 (def ticks-per-frame (int (/ main-frequency fps))) ;time taken on each frame (roughly)
-(def rom-path "programs/slipperyslope.ch8") ;rom to load and its path
+(def rom-path "programs/pumpkindressup.ch8") ;rom to load and its path
 
 (defn read-rom-into-memory
   "Returns a new memory state with the ROM loaded in."
@@ -42,6 +42,7 @@
   #_(println @state) ;@ cause it's an atom and has to be dereferenced
   (dotimes [i runtime]
     (cpu/tick! state)
+    (cpu/update-keyboard-cli! state)
     #_(println @state)
     (when (zero? (mod i ticks-per-frame)) ;runs at ~(/ main-frequency fps), 60Hz by default
       (render/render-ascii-chip8 (:screen @state))
